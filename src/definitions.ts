@@ -3,6 +3,7 @@ export interface NativeAudio {
   preload(options: PreloadOptions): Promise<void>;
   play(options: { assetId: string, time: number }): Promise<void>;
   resume(options: { assetId: string }): Promise<void>;
+  pause(options: { assetId: string }): Promise<void>;
   loop(options: { assetId: string }): Promise<void>;
   stop(options: { assetId: string }): Promise<void>;
   unload(options: { assetId: string }): Promise<void>;
