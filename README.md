@@ -244,6 +244,19 @@ resume(options: { assetId: string; }) => Promise<void>
 --------------------
 
 
+### pause(...)
+
+```typescript
+pause(options: { assetId: string; }) => Promise<void>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ assetId: string; }</code> |
+
+--------------------
+
+
 ### loop(...)
 
 ```typescript
