@@ -234,7 +234,16 @@ public class NativeAudio: CAPPlugin {
                             call.success()
                         }
                     } else {
-                        call.error(Constant.ErrorAssetPath + " - " + assetPath)
+//                        call.error(Constant.ErrorAssetPath + " - " + assetPath)
+                        if !complex {
+                        } else {
+                            let audioAsset: AudioAsset = AudioAsset(owner: self, withAssetId: audioId, withPath: assetPath, withChannels: channels, withVolume: volume as NSNumber?, withFadeDelay: delay, isRemote: true)
+                            
+                            self.audioList[audioId] = audioAsset
+                            
+                            call.success()
+                        }
+                        
                     }
                 }
             }
