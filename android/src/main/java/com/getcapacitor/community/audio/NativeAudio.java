@@ -1,470 +1,209 @@
 package com.getcapacitor.community.audio;
 
-import static com.getcapacitor.community.audio.Constant.ASSET_ID;
-import static com.getcapacitor.community.audio.Constant.ASSET_PATH;
-import static com.getcapacitor.community.audio.Constant.AUDIO_CHANNEL_NUM;
-import static com.getcapacitor.community.audio.Constant.ERROR_ASSET_NOT_LOADED;
-import static com.getcapacitor.community.audio.Constant.ERROR_ASSET_PATH_MISSING;
-import static com.getcapacitor.community.audio.Constant.ERROR_AUDIO_ASSET_MISSING;
-import static com.getcapacitor.community.audio.Constant.ERROR_AUDIO_EXISTS;
-import static com.getcapacitor.community.audio.Constant.ERROR_AUDIO_ID_MISSING;
-import static com.getcapacitor.community.audio.Constant.LOOP;
-import static com.getcapacitor.community.audio.Constant.OPT_FADE_MUSIC;
-import static com.getcapacitor.community.audio.Constant.VOLUME;
+import static com.getcapacitor.community.audio.Constant.*;
 
 import android.Manifest;
-import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
-import android.media.AudioManager;
-import android.os.ParcelFileDescriptor;
+import android.content.ComponentName;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.RemoteException;
+import android.os.ResultReceiver;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.util.Log;
+
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
-import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
 
 @CapacitorPlugin(
-  permissions = {
-    @Permission(strings = { Manifest.permission.MODIFY_AUDIO_SETTINGS }),
-    @Permission(strings = { Manifest.permission.WRITE_EXTERNAL_STORAGE }),
-    @Permission(strings = { Manifest.permission.READ_PHONE_STATE }),
-  }
+        permissions = {@Permission(strings = {Manifest.permission.MODIFY_AUDIO_SETTINGS})}
 )
-public class NativeAudio
-  extends Plugin
-  implements AudioManager.OnAudioFocusChangeListener {
+public class NativeAudio extends Plugin {
 
-  public static final String TAG = "NativeAudio";
+    public static final String TAG = "NativeAudio";
 
-  private static HashMap<String, AudioAsset> audioAssetList;
-  private static ArrayList<AudioAsset> resumeList;
-  private boolean fadeMusic = false;
+    private MediaBrowserCompat mediaBrowser;
+    private String currentUrl;
 
-  @Override
-  public void load() {
-    super.load();
+    private final MediaBrowserCompat.ConnectionCallback connectionCallbacks = new MediaBrowserCompat.ConnectionCallback() {
 
-    AudioManager audioManager = (AudioManager) getBridge()
-      .getActivity()
-      .getSystemService(Context.AUDIO_SERVICE);
-
-    if (audioManager != null) {
-      int result = audioManager.requestAudioFocus(
-        this,
-        AudioManager.STREAM_MUSIC,
-        AudioManager.AUDIOFOCUS_GAIN
-      );
-    }
-  }
-
-  @Override
-  public void onAudioFocusChange(int focusChange) {
-    if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {} else if (
-      focusChange == AudioManager.AUDIOFOCUS_GAIN
-    ) {} else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {}
-  }
-
-  @Override
-  protected void handleOnPause() {
-    super.handleOnPause();
-
-    try {
-      if (audioAssetList != null) {
-        for (HashMap.Entry<String, AudioAsset> entry : audioAssetList.entrySet()) {
-          AudioAsset audio = entry.getValue();
-
-          if (audio != null) {
-            boolean wasPlaying = audio.pause();
-
-            if (wasPlaying) {
-              resumeList.add(audio);
-            }
-          }
-        }
-      }
-    } catch (Exception ex) {
-      Log.d(
-        TAG,
-        "Exception caught while listening for handleOnPause: " +
-        ex.getLocalizedMessage()
-      );
-    }
-  }
-
-  @Override
-  protected void handleOnResume() {
-    super.handleOnResume();
-
-    try {
-      if (resumeList != null) {
-        while (!resumeList.isEmpty()) {
-          AudioAsset audio = resumeList.remove(0);
-
-          if (audio != null) {
-            audio.resume();
-          }
-        }
-      }
-    } catch (Exception ex) {
-      Log.d(
-        TAG,
-        "Exception caught while listening for handleOnResume: " +
-        ex.getLocalizedMessage()
-      );
-    }
-  }
-
-  @PluginMethod
-  public void configure(PluginCall call) {
-    initSoundPool();
-
-    if (call.hasOption(OPT_FADE_MUSIC)) this.fadeMusic =
-      call.getBoolean(OPT_FADE_MUSIC);
-  }
-
-  @PluginMethod
-  public void preload(final PluginCall call) {
-    new Thread(
-      new Runnable() {
         @Override
-        public void run() {
-          preloadAsset(call);
-        }
-      }
-    )
-      .start();
-  }
+        public void onConnected() {
+            Log.d(TAG, "onConnected ");
+            super.onConnected();
+            try {
+                MediaControllerCompat.setMediaController(getActivity(), new MediaControllerCompat(getActivity(), mediaBrowser.getSessionToken()));
 
-  @PluginMethod
-  public void play(final PluginCall call) {
-    getBridge()
-      .getActivity()
-      .runOnUiThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            playOrLoop("play", call);
-          }
-        }
-      );
-  }
-
-  @PluginMethod
-  public void getCurrentTime(final PluginCall call) {
-    try {
-      initSoundPool();
-
-      String audioId = call.getString(ASSET_ID);
-
-      if (!isStringValid(audioId)) {
-        call.reject(ERROR_AUDIO_ID_MISSING + " - " + audioId);
-        return;
-      }
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          call.resolve(
-            new JSObject().put("currentTime", asset.getCurrentPosition())
-          );
-        }
-      } else {
-        call.reject(ERROR_AUDIO_ASSET_MISSING + " - " + audioId);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void getDuration(final PluginCall call) {
-    try {
-      initSoundPool();
-
-      String audioId = call.getString(ASSET_ID);
-
-      if (!isStringValid(audioId)) {
-        call.reject(ERROR_AUDIO_ID_MISSING + " - " + audioId);
-        return;
-      }
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          call.resolve(new JSObject().put("duration", asset.getDuration()));
-        }
-      } else {
-        call.reject(ERROR_AUDIO_ASSET_MISSING + " - " + audioId);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void loop(final PluginCall call) {
-    getBridge()
-      .getActivity()
-      .runOnUiThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            playOrLoop("loop", call);
-          }
-        }
-      );
-  }
-
-  @PluginMethod
-  public void pause(PluginCall call) {
-    try {
-      initSoundPool();
-      String audioId = call.getString(ASSET_ID);
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          boolean wasPlaying = asset.pause();
-
-          if (wasPlaying) {
-            resumeList.add(asset);
-          }
-        }
-      } else {
-        call.reject(ERROR_ASSET_NOT_LOADED + " - " + audioId);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void resume(PluginCall call) {
-    try {
-      initSoundPool();
-      String audioId = call.getString(ASSET_ID);
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          asset.resume();
-          resumeList.add(asset);
-        }
-      } else {
-        call.reject(ERROR_ASSET_NOT_LOADED + " - " + audioId);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void stop(PluginCall call) {
-    try {
-      initSoundPool();
-      String audioId = call.getString(ASSET_ID);
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          asset.stop();
-        }
-      } else {
-        call.reject(ERROR_ASSET_NOT_LOADED + " - " + audioId);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void unload(PluginCall call) {
-    try {
-      initSoundPool();
-      new JSObject();
-      JSObject status;
-
-      if (isStringValid(call.getString(ASSET_ID))) {
-        String audioId = call.getString(ASSET_ID);
-
-        if (audioAssetList.containsKey(audioId)) {
-          AudioAsset asset = audioAssetList.get(audioId);
-          if (asset != null) {
-            asset.unload();
-            audioAssetList.remove(audioId);
-
-            status = new JSObject();
-            status.put("status", "OK");
-            call.resolve(status);
-          } else {
-            status = new JSObject();
-            status.put("status", false);
-            call.resolve(status);
-          }
-        } else {
-          status = new JSObject();
-          status.put("status", ERROR_AUDIO_ASSET_MISSING + " - " + audioId);
-          call.resolve(status);
-        }
-      } else {
-        status = new JSObject();
-        status.put("status", ERROR_AUDIO_ID_MISSING);
-        call.resolve(status);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  @PluginMethod
-  public void setVolume(PluginCall call) {
-    try {
-      initSoundPool();
-
-      String audioId = call.getString(ASSET_ID);
-      float volume = call.getFloat(VOLUME);
-
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (asset != null) {
-          asset.setVolume(volume);
-        }
-      } else {
-        call.reject(ERROR_AUDIO_ASSET_MISSING);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  public void dispatchComplete(String assetId) {
-    JSObject ret = new JSObject();
-    ret.put("assetId", assetId);
-    notifyListeners("complete", ret);
-  }
-
-  private void preloadAsset(PluginCall call) {
-    double volume = 1.0;
-    int audioChannelNum = 1;
-
-    try {
-      initSoundPool();
-
-      String audioId = call.getString(ASSET_ID);
-
-      boolean isUrl = call.getBoolean("isUrl", false);
-
-      if (!isStringValid(audioId)) {
-        call.reject(ERROR_AUDIO_ID_MISSING + " - " + audioId);
-        return;
-      }
-
-      if (!audioAssetList.containsKey(audioId)) {
-        String assetPath = call.getString(ASSET_PATH);
-
-        if (!isStringValid(assetPath)) {
-          call.reject(
-            ERROR_ASSET_PATH_MISSING + " - " + audioId + " - " + assetPath
-          );
-          return;
-        }
-
-        String fullPath = assetPath; //"raw/".concat(assetPath);
-
-        if (call.getDouble(VOLUME) == null) {
-          volume = 1.0;
-        } else {
-          volume = call.getDouble(VOLUME, 0.5);
-        }
-
-        if (call.getInt(AUDIO_CHANNEL_NUM) == null) {
-          audioChannelNum = 1;
-        } else {
-          audioChannelNum = call.getInt(AUDIO_CHANNEL_NUM);
-        }
-
-        AssetFileDescriptor assetFileDescriptor;
-        if (isUrl) {
-          File f = new File(new URI(fullPath));
-          ParcelFileDescriptor p = ParcelFileDescriptor.open(
-            f,
-            ParcelFileDescriptor.MODE_READ_ONLY
-          );
-          assetFileDescriptor = new AssetFileDescriptor(p, 0, -1);
-        } else {
-          Context ctx = getBridge().getActivity().getApplicationContext();
-          AssetManager am = ctx.getResources().getAssets();
-          assetFileDescriptor = am.openFd(fullPath);
-        }
-
-        AudioAsset asset = new AudioAsset(
-          this,
-          audioId,
-          assetFileDescriptor,
-          audioChannelNum,
-          (float) volume
-        );
-        audioAssetList.put(audioId, asset);
-
-        JSObject status = new JSObject();
-        status.put("STATUS", "OK");
-        call.resolve(status);
-      } else {
-        call.reject(ERROR_AUDIO_EXISTS);
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
-
-  private void playOrLoop(String action, final PluginCall call) {
-    try {
-      initSoundPool();
-
-      final String audioId = call.getString(ASSET_ID);
-      final Double time = call.getDouble("time", 0.0);
-      if (audioAssetList.containsKey(audioId)) {
-        AudioAsset asset = audioAssetList.get(audioId);
-        if (LOOP.equals(action) && asset != null) {
-          asset.loop();
-        } else if (asset != null) {
-
-          asset.play(time,
-            new Callable<Void>() {
-              @Override
-              public Void call() throws Exception {
-                call.resolve(new JSObject().put(ASSET_ID, audioId));
-
-                return null;
-              }
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
-          );
+
         }
-      }
-    } catch (Exception ex) {
-      call.reject(ex.getMessage());
-    }
-  }
+    };
 
-  private void initSoundPool() {
-    if (audioAssetList == null) {
-      audioAssetList = new HashMap<>();
+    @Override
+    public void load() {
+        super.load();
+        Log.d(TAG, "load ");
+        mediaBrowser = new MediaBrowserCompat(getContext(), new ComponentName(getContext(), NativeAudioService.class), connectionCallbacks, null);
+        mediaBrowser.connect();
     }
 
-    if (resumeList == null) {
-      resumeList = new ArrayList<>();
+    @Override
+    protected void handleOnDestroy() {
+        super.handleOnDestroy();
+        mediaBrowser.disconnect();
     }
-  }
 
-  private boolean isStringValid(String value) {
-    return (value != null && !value.isEmpty() && !value.equals("null"));
-  }
+    @PluginMethod
+    public void configure(PluginCall call) {
+        Log.d(TAG, "configure " + call);
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void preload(final PluginCall call) {
+        try {
+            if (Boolean.TRUE == call.getBoolean(IS_URL, false)) {
+                currentUrl = call.getString(ASSET_PATH);
+            } else {
+                currentUrl = "file://android_asset/" + call.getString(ASSET_PATH);
+            }
+            call.resolve();
+        }catch (Exception e) {
+            call.reject(e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void play(final PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.getTransportControls().playFromUri(Uri.parse(currentUrl), null);
+            call.resolve();
+        }catch (Exception e) {
+            call.reject(e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getCurrentTime(final PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.sendCommand(NativeAudioService.COMMAND_GET_CURRENT_POSITION, null, new ResultReceiver(new Handler()) {
+                @Override
+                protected void onReceiveResult(int resultCode, Bundle resultData) {
+                    super.onReceiveResult(resultCode, resultData);
+                    call.resolve(new JSObject().put(CURRENT_TIME, resultData.getInt(NativeAudioService.EXTRA_CURRENT_POSITION)));
+                }
+            });
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setCurrentTime(final PluginCall call) {
+        try {
+            long desiredTime = call.getFloat(CURRENT_TIME, 0f).longValue();
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.getTransportControls().seekTo(desiredTime);
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getDuration(final PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            if (mc.getMetadata() != null) {
+                call.resolve(new JSObject().put(DURATION, mc.getMetadata().getLong(MediaMetadataCompat.METADATA_KEY_DURATION)));
+            } else {
+                call.resolve(new JSObject().put(DURATION, -1));
+            }
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void loop(final PluginCall call) {
+        call.reject("NOT YET IMPLEMENTED");
+    }
+
+    @PluginMethod
+    public void pause(PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.getTransportControls().pause();
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void resume(PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.getTransportControls().play();
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void stop(PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            mc.getTransportControls().stop();
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void unload(PluginCall call) {
+        try {
+            call.resolve();
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setVolume(PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            float volume = call.getFloat(VOLUME, 0.5f);
+            int volumeAbs = (int) (mc.getPlaybackInfo().getMaxVolume() * volume);
+            mc.setVolumeTo(volumeAbs, 0);
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getVolume(PluginCall call) {
+        try {
+            MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
+            float volume = ((float) mc.getPlaybackInfo().getCurrentVolume()) / mc.getPlaybackInfo().getMaxVolume();
+
+            JSObject ret = new JSObject();
+            ret.put(VOLUME, volume);
+            call.resolve(ret);
+        } catch (Exception ex) {
+            call.reject(ex.getMessage());
+        }
+    }
 }
