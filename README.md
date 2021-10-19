@@ -203,6 +203,15 @@ NativeAudio.setVolume({
 });
 
 /**
+ * This method will get the current volume for a audio file.
+ * @param assetId - identifier of the asset
+ * @returns number
+ */
+NativeAudio.getVolume({
+  assetId: 'fire',
+});
+
+/**
  * this method will get the duration of an audio file.
  * only works if channels == 1
  */
@@ -223,6 +232,17 @@ NativeAudio.getCurrentTime({
 .then(result => {
   console.log(result.currentTime);
 })
+
+/**
+ * This method will set the new current time for a audio file.
+ * @param assetId - identifier of the asset
+ *        volume - numerical value
+ * @returns void
+ */
+NativeAudio.setCurrentTime({
+  assetId: 'fire',
+  currentTime: 123455,
+});
 ```
 
 ## API
