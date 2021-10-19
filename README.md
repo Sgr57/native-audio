@@ -272,13 +272,13 @@ function handleControlsEvent(action) {
 		case 'STATE_BUFFERING':
 			// buffering
 			break;
-    case 'STATE_ERROR':
+		case 'STATE_ERROR':
 			// error
 			break;
-    case 'STATE_CONNECTING':
+    		case 'STATE_CONNECTING':
 			// connecting
 			break;
-    case 'OTHER':
+    		case 'OTHER':
 			// other
 			break;
 	}
