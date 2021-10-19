@@ -243,6 +243,47 @@ NativeAudio.setCurrentTime({
   assetId: 'fire',
   currentTime: 123455,
 });
+
+// Listen for events and pass them to your handler function
+
+CapacitorMusicControls.addListener('controlsNotification', (info: any) => {
+    console.log('controlsNotification was fired');
+    console.log(info);
+    handleControlsEvent(info);
+});
+
+function handleControlsEvent(action) {
+	console.log("hello from handleControlsEvent")
+	const message = action.message;
+	console.log("message: " + message)
+	switch(message) {
+		case 'STATE_NONE':
+			// none
+			break;
+		case 'STATE_STOPPED':
+			// stop
+			break;
+		case 'STATE_PLAYING':
+			// playing
+			break;
+		case 'STATE_PAUSED':
+			// paused
+			break;
+		case 'STATE_BUFFERING':
+			// buffering
+			break;
+    case 'STATE_ERROR':
+			// error
+			break;
+    case 'STATE_CONNECTING':
+			// connecting
+			break;
+    case 'OTHER':
+			// other
+			break;
+	}
+}
+
 ```
 
 ## API
@@ -368,6 +409,18 @@ setVolume(options: { assetId: string; volume: number; }) => Promise<void>
 
 --------------------
 
+### getVolume(...)
+
+```typescript
+getVolume(options: { assetId: string; }) => Promise<{volume: number;}>
+```
+
+| Param         | Type                                              |
+| ------------- | ------------------------------------------------- |
+| **`options`** | <code>{ assetId: string; }</code> |
+
+--------------------
+
 
 ### getCurrentTime(...)
 
@@ -378,6 +431,20 @@ getCurrentTime(options: { assetId: string; }) => Promise<{ currentTime: number; 
 | Param         | Type                              |
 | ------------- | --------------------------------- |
 | **`options`** | <code>{ assetId: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
+
+--------------------
+  
+### setCurrentTime(...)
+
+```typescript
+setCurrentTime(options: { currentTime: number; }) => Promise<{ currentTime: number; }>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ currentTime: number, value in seconds; }</code> |
 
 **Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
 
@@ -436,5 +503,16 @@ getDuration(options: { assetId: string; }) => Promise<{ duration: number; }>
 | **`nextIcon`**             | <code>'media_next', ANDROID ONLY</code> |
 | **`closeIcon`**            | <code>'media_close', ANDROID ONLY</code> |
 | **`notificationIcon`**     | <code>'notification', ANDROID ONLY</code> |
+  
+###Notification
+  Possible values:
+* STATE_NONE
+* STATE_STOPPED
+* STATE_PLAYING
+* STATE_PAUSED
+* STATE_BUFFERING
+* STATE_ERROR
+* STATE_CONNECTING (?)
+* OTHER
 
 </docgen-api>
