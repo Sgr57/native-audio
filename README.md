@@ -411,39 +411,30 @@ getDuration(options: { assetId: string; }) => Promise<{ duration: number; }>
 
 #### PreloadOptions
 
-| Prop                  | Type                 |
-| --------------------- | -------------------- |
-| **`track`**           | <code>string, optiona, default: ''</code>  |
-| **`artist`**          | <code>string, optional, default ''</code>  |
-| **`album`**           | <code>string, optional, default ''</code>  |
-| **`cover`**           | <code>can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is 
-|                       |  in the www folder of your app) or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional</code>|
-| **`isUrl`**           | <code>boolean</code> |
-  
-  
-  track - title of the track; string, optional, default ''
- *        artist - string, optional, default ''
- *        album - string, optional, default ''
- *        cover - can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app)
- *     	          or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional
- *        hasPrev - show previous button, optional, default: true
- *        hasNext - show next button, optional, default: true
- *        hasClose - show close button, optional, default: false
- *        duration - number, optional, default: 0, iOS ONLY
- *        elapsed - number, optional, default: 0, iOS ONLY
- *        hasSkipForward - boolean, optional, default: false. true value overrides hasNext, iOS ONLY
- *        hasSkipBackward - boolean, optional, default: false. true value overrides hasPrev, iOS ONLY
- *        skipForwardInterval - number, optional. default: 15, iOS ONLY
- *        skipBackwardInterval - number, optional. default: 15, iOS ONLY
- *        hasScrubbing - boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY
- *        isPlaying - boolean, optional, default : true, ANDROID ONLY
- *        dismissable - boolean,	optional, default : false, ANDROID ONLY
- *        ticker - string, text displayed in the status bar when the notification (and the ticker) are updated
- *        playIcon: 'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders
- *        pauseIcon: 'media_pause', ANDROID ONLY
- *        prevIcon: 'media_prev', ANDROID ONLY
- *        nextIcon: 'media_next', ANDROID ONLY
- *        closeIcon: 'media_close', ANDROID ONLY
- *        notificationIcon: 'notification', ANDROID ONLY
+| Prop                       | Type                 |
+| -------------------------- | -------------------- |
+| **`track`**                | <code>string, optiona, default: ''</code>  |
+| **`artist`**               | <code>string, optional, default ''</code>  |
+| **`album`**                | <code>string, optional, default ''</code>  |
+| **`cover`**                | <code>can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app) or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional</code>|
+| **`hasPrev`**              | <code>show previous button, boolean, optional, default: true</code> |
+| **`hasNext`**              | <code>show next button, optional, default: true</code> |
+| **`hasClose`**             | <code>show close button, optional, default: false</code> |
+| **`duration`**             | <code>number, optional, default: 0, iOS ONLY</code> |
+| **`elapsed`**              | <code>number, optional, default: 0, iOS ONLY</code> |
+| **`hasSkipForward`**       | <code>boolean, optional, default: false. true value overrides hasNext, iOS ONLY</code> |
+| **`hasSkipBackward`**      | <code>boolean, optional, default: false. true value overrides hasPrev, iOS ONLY</code> |
+| **`skipForwardInterval`**  | <code>number, optional. default: 15, iOS ONLY</code> |
+| **`skipBackwardInterval`** | <code>number, optional. default: 15, iOS ONLY</code> |
+| **`hasScrubbing`**         | <code>boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY</code> |
+| **`isPlaying`**            | <code>boolean, optional, default : true, ANDROID ONLY</code> |
+| **`dismissable`**          | <code>boolean,	optional, default : false, ANDROID ONLY</code> |
+| **`ticker`**               | <code>string, text displayed in the status bar when the notification (and the ticker) are updated</code> |
+| **`playIcon`**             | <code>'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders, ANDROID ONLY</code> |
+| **`pauseIcon`**            | <code>'media_pause', ANDROID ONLY</code> |
+| **`prevIcon`**             | <code>'media_prev', ANDROID ONLY</code> |
+| **`nextIcon`**             | <code>'media_next', ANDROID ONLY</code> |
+| **`closeIcon`**            | <code>'media_close', ANDROID ONLY</code> |
+| **`notificationIcon`**     | <code>'notification', ANDROID ONLY</code> |
 
 </docgen-api>
