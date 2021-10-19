@@ -284,6 +284,10 @@ function handleControlsEvent(action) {
 	}
 }
 
+NativeAudio.addListener('currentTime', (currentTime: number) => {
+    console.log('currentTime:', currentTime);
+});
+
 ```
 
 ## API
