@@ -246,7 +246,7 @@ NativeAudio.setCurrentTime({
 
 // Listen for events and pass them to your handler function
 
-CapacitorMusicControls.addListener('controlsNotification', (info: any) => {
+NativeAudio.addListener('controlsNotification', (info: any) => {
     console.log('controlsNotification was fired');
     console.log(info);
     handleControlsEvent(info);
