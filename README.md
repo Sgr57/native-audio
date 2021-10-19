@@ -115,12 +115,12 @@ import {NativeAudio} from '@capacitor-community/native-audio'
  *        skipBackwardInterval - number, optional. default: 15, iOS ONLY
  *        hasScrubbing - boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY
  *        isPlaying - boolean, optional, default : true, ANDROID ONLY
- *.       dismissable - boolean,	optional, default : false, ANDROID ONLY
+ *        dismissable - boolean,	optional, default : false, ANDROID ONLY
  *        ticker - string, text displayed in the status bar when the notification (and the ticker) are updated
  *        playIcon: 'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders
  *        pauseIcon: 'media_pause', ANDROID ONLY
  *        prevIcon: 'media_prev', ANDROID ONLY
- *.       nextIcon: 'media_next', ANDROID ONLY
+ *        nextIcon: 'media_next', ANDROID ONLY
  *        closeIcon: 'media_close', ANDROID ONLY
  *        notificationIcon: 'notification', ANDROID ONLY
  
