@@ -99,17 +99,57 @@ import {NativeAudio} from '@capacitor-community/native-audio'
 
 /**
  * This method will load more optimized audio files for background into memory.
- * @param assetPath - relative path of the file or absolute url (file://)
- *        assetId - unique identifier of the file
- *        audioChannelNum - number of audio channels
- *        isUrl - pass true if assetPath is a `file://` url
+ * @param track - title of the track; string, optional, default ''
+ *        artist - string, optional, default ''
+ *        album - string, optional, default ''
+ *        cover - can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app)
+ *     	          or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional
+ *        hasPrev - show previous button, optional, default: true
+ *        hasNext - show next button, optional, default: true
+ *        hasClose - show close button, optional, default: false
+ *        duration - number, optional, default: 0, iOS ONLY
+ *        elapsed - number, optional, default: 0, iOS ONLY
+ *        hasSkipForward - boolean, optional, default: false. true value overrides hasNext, iOS ONLY
+ *        hasSkipBackward - boolean, optional, default: false. true value overrides hasPrev, iOS ONLY
+ *        skipForwardInterval - number, optional. default: 15, iOS ONLY
+ *        skipBackwardInterval - number, optional. default: 15, iOS ONLY
+ *        hasScrubbing - boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY
+ *        isPlaying - boolean, optional, default : true, ANDROID ONLY
+ *.       dismissable - boolean,	optional, default : false, ANDROID ONLY
+ *        ticker - string, text displayed in the status bar when the notification (and the ticker) are updated
+ *        playIcon: 'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders
+ *        pauseIcon: 'media_pause', ANDROID ONLY
+ *        prevIcon: 'media_prev', ANDROID ONLY
+ *.       nextIcon: 'media_next', ANDROID ONLY
+ *        closeIcon: 'media_close', ANDROID ONLY
+ *        notificationIcon: 'notification', ANDROID ONLY
+ 
  * @returns void
  */
 NativeAudio.preload({
-    assetId: "fire",
-    assetPath: "fire.mp3",
-    audioChannelNum: 1,
-    isUrl: false
+    track       : 'Time is Running Out',
+    artist      : 'Muse',
+    album       : 'Absolution',
+    cover       : 'albums/absolution.jpg',
+    hasPrev   : false,
+    hasNext   : false,
+    hasClose  : true,
+    duration : 60,
+    elapsed : 10,
+    hasSkipForward : true,
+    hasSkipBackward : true,
+    skipForwardInterval : 15,
+    skipBackwardInterval : 15,
+    hasScrubbing : false,
+    isPlaying   : true,
+    dismissable : true,
+    ticker	  : 'Now playing "Time is Running Out"',
+    playIcon: 'media_play',
+    pauseIcon: 'media_pause',
+    prevIcon: 'media_prev',
+    nextIcon: 'media_next',
+    closeIcon: 'media_close',
+    notificationIcon: 'notification'
 });
 
 /**
