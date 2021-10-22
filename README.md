@@ -99,7 +99,11 @@ import {NativeAudio} from '@capacitor-community/native-audio'
 
 /**
  * This method will load more optimized audio files for background into memory.
- * @param track - title of the track; string, optional, default ''
+ * @param assetPath - relative path of the file or absolute url (file://)
+ *        assetId - unique identifier of the file
+ *        audioChannelNum - number of audio channels
+ *        isUrl - pass true if assetPath is a `file://` url
+ *        track - title of the track; string, optional, default ''
  *        artist - string, optional, default ''
  *        album - string, optional, default ''
  *        cover - can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app)
@@ -127,7 +131,11 @@ import {NativeAudio} from '@capacitor-community/native-audio'
  * @returns void
  */
 NativeAudio.preload({
-    track       : 'Time is Running Out',
+    assetId: "fire",
+    assetPath: "fire.mp3",
+    audioChannelNum: 1,
+    isUrl: false
+    trackName       : 'Time is Running Out',
     artist      : 'Muse',
     album       : 'Absolution',
     cover       : 'albums/absolution.jpg',
@@ -142,7 +150,7 @@ NativeAudio.preload({
     skipBackwardInterval : 15,
     hasScrubbing : false,
     isPlaying   : true,
-    dismissable : true,
+    dismissible : true,
     ticker	  : 'Now playing "Time is Running Out"',
     playIcon: 'media_play',
     pauseIcon: 'media_pause',
