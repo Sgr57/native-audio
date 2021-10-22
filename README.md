@@ -103,6 +103,31 @@ import {NativeAudio} from '@capacitor-community/native-audio'
  *        assetId - unique identifier of the file
  *        audioChannelNum - number of audio channels
  *        isUrl - pass true if assetPath is a `file://` url
+ *        track - title of the track; string, optional, default ''
+ *        artist - string, optional, default ''
+ *        album - string, optional, default ''
+ *        cover - can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app)
+ *     	          or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional
+ *        hasPrev - show previous button, optional, default: true
+ *        hasNext - show next button, optional, default: true
+ *        hasClose - show close button, optional, default: false
+ *        duration - number, optional, default: 0, iOS ONLY
+ *        elapsed - number, optional, default: 0, iOS ONLY
+ *        hasSkipForward - boolean, optional, default: false. true value overrides hasNext, iOS ONLY
+ *        hasSkipBackward - boolean, optional, default: false. true value overrides hasPrev, iOS ONLY
+ *        skipForwardInterval - number, optional. default: 15, iOS ONLY
+ *        skipBackwardInterval - number, optional. default: 15, iOS ONLY
+ *        hasScrubbing - boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY
+ *        isPlaying - boolean, optional, default : true, ANDROID ONLY
+ *        dismissable - boolean,	optional, default : false, ANDROID ONLY
+ *        ticker - string, text displayed in the status bar when the notification (and the ticker) are updated
+ *        playIcon: 'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders
+ *        pauseIcon: 'media_pause', ANDROID ONLY
+ *        prevIcon: 'media_prev', ANDROID ONLY
+ *        nextIcon: 'media_next', ANDROID ONLY
+ *        closeIcon: 'media_close', ANDROID ONLY
+ *        notificationIcon: 'notification', ANDROID ONLY
+ 
  * @returns void
  */
 NativeAudio.preload({
@@ -110,6 +135,29 @@ NativeAudio.preload({
     assetPath: "fire.mp3",
     audioChannelNum: 1,
     isUrl: false
+    trackName       : 'Time is Running Out',
+    artist      : 'Muse',
+    album       : 'Absolution',
+    cover       : 'albums/absolution.jpg',
+    hasPrev   : false,
+    hasNext   : false,
+    hasClose  : true,
+    duration : 60,
+    elapsed : 10,
+    hasSkipForward : true,
+    hasSkipBackward : true,
+    skipForwardInterval : 15,
+    skipBackwardInterval : 15,
+    hasScrubbing : false,
+    isPlaying   : true,
+    dismissible : true,
+    ticker	  : 'Now playing "Time is Running Out"',
+    playIcon: 'media_play',
+    pauseIcon: 'media_pause',
+    prevIcon: 'media_prev',
+    nextIcon: 'media_next',
+    closeIcon: 'media_close',
+    notificationIcon: 'notification'
 });
 
 /**
@@ -163,6 +211,18 @@ NativeAudio.setVolume({
 });
 
 /**
+ * This method will get the current volume for a audio file.
+ * @param assetId - identifier of the asset
+ * @returns number
+ */
+NativeAudio.getVolume({
+  assetId: 'fire',
+})
+.then(result => {
+  result.volume
+});
+
+/**
  * this method will get the duration of an audio file.
  * only works if channels == 1
  */
@@ -181,8 +241,60 @@ NativeAudio.getCurrentTime({
   assetId: 'fire'
 });
 .then(result => {
-  console.log(result.currentTime);
+  console.log(result.time);
 })
+
+/**
+ * This method will set the new current time for a audio file.
+ * @param assetId - identifier of the asset
+ *        time - numerical value in seconds
+ * @returns void
+ */
+NativeAudio.setCurrentTime({
+  assetId: 'fire',
+  time: 123455,
+});
+
+// Listen for events and pass them to your handler function
+
+NativeAudio.addListener('playbackStateChanged', (info: {status: string, position: number}) => {
+    console.log('controlsNotification was fired');
+    console.log(info);
+    handleControlsEvent(info);
+});
+
+function handleControlsEvent(action) {
+	console.log("hello from handleControlsEvent")
+	const message = action.message;
+	console.log("message: " + message)
+	switch(message) {
+		case 'NONE':
+			// none
+			break;
+		case 'STOPPED':
+			// stop
+			break;
+		case 'PLAYING':
+			// playing
+			break;
+		case 'PAUSED':
+			// paused
+			break;
+		case 'BUFFERING':
+			// buffering
+			break;
+		case 'ERROR':
+			// error
+			break;
+    		case 'CONNECTING':
+			// connecting
+			break;
+    		case 'OTHER':
+			// other
+			break;
+	}
+}
+
 ```
 
 ## API
@@ -308,18 +420,44 @@ setVolume(options: { assetId: string; volume: number; }) => Promise<void>
 
 --------------------
 
+### getVolume(...)
+
+```typescript
+getVolume(options: { assetId: string; }) => Promise<{volume: number;}>
+```
+
+| Param         | Type                                              |
+| ------------- | ------------------------------------------------- |
+| **`options`** | <code>{ assetId: string; }</code> |
+
+--------------------
+
 
 ### getCurrentTime(...)
 
 ```typescript
-getCurrentTime(options: { assetId: string; }) => Promise<{ currentTime: number; }>
+getCurrentTime(options: { assetId: string; }) => Promise<{ time: number; }>
 ```
 
 | Param         | Type                              |
 | ------------- | --------------------------------- |
 | **`options`** | <code>{ assetId: string; }</code> |
 
-**Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
+**Returns:** <code>Promise&lt;{ time: number; }&gt;</code>
+
+--------------------
+  
+### setCurrentTime(...)
+
+```typescript
+setCurrentTime(options: { time: number; }) => Promise<void>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ time: number, value in seconds; }</code> |
+
+**Returns:** <code>Promise&lt;void&gt;</code>
 
 --------------------
 
@@ -351,12 +489,41 @@ getDuration(options: { assetId: string; }) => Promise<{ duration: number; }>
 
 #### PreloadOptions
 
-| Prop                  | Type                 |
-| --------------------- | -------------------- |
-| **`assetPath`**       | <code>string</code>  |
-| **`assetId`**         | <code>string</code>  |
-| **`volume`**          | <code>number</code>  |
-| **`audioChannelNum`** | <code>number</code>  |
-| **`isUrl`**           | <code>boolean</code> |
+| Prop                       | Type                 |
+| -------------------------- | -------------------- |
+| **`track`**                | <code>string, optiona, default: ''</code>  |
+| **`artist`**               | <code>string, optional, default ''</code>  |
+| **`album`**                | <code>string, optional, default ''</code>  |
+| **`cover`**                | <code>can be a local path (use fullpath 'file:///storage/emulated/...', or only 'my_image.jpg' if my_image.jpg is in the www folder of your app) or a remote url ('http://...', 'https://...', 'ftp://...'), string, optional</code>|
+| **`hasPrev`**              | <code>show previous button, boolean, optional, default: true</code> |
+| **`hasNext`**              | <code>show next button, optional, default: true</code> |
+| **`hasClose`**             | <code>show close button, optional, default: false</code> |
+| **`duration`**             | <code>number, optional, default: 0, iOS ONLY</code> |
+| **`elapsed`**              | <code>number, optional, default: 0, iOS ONLY</code> |
+| **`hasSkipForward`**       | <code>boolean, optional, default: false. true value overrides hasNext, iOS ONLY</code> |
+| **`hasSkipBackward`**      | <code>boolean, optional, default: false. true value overrides hasPrev, iOS ONLY</code> |
+| **`skipForwardInterval`**  | <code>number, optional. default: 15, iOS ONLY</code> |
+| **`skipBackwardInterval`** | <code>number, optional. default: 15, iOS ONLY</code> |
+| **`hasScrubbing`**         | <code>boolean, optional. default to false. Enable scrubbing from control center progress bar, iOS ONLY</code> |
+| **`isPlaying`**            | <code>boolean, optional, default : true, ANDROID ONLY</code> |
+| **`dismissable`**          | <code>boolean,	optional, default : false, ANDROID ONLY</code> |
+| **`ticker`**               | <code>string, text displayed in the status bar when the notification (and the ticker) are updated</code> |
+| **`playIcon`**             | <code>'media_play',A ll icons default to their built-in android equivalents, The supplied drawable name, e.g. 'media_play', is the name of a drawable found under android/res/drawable folders, ANDROID ONLY</code> |
+| **`pauseIcon`**            | <code>'media_pause', ANDROID ONLY</code> |
+| **`prevIcon`**             | <code>'media_prev', ANDROID ONLY</code> |
+| **`nextIcon`**             | <code>'media_next', ANDROID ONLY</code> |
+| **`closeIcon`**            | <code>'media_close', ANDROID ONLY</code> |
+| **`notificationIcon`**     | <code>'notification', ANDROID ONLY</code> |
+  
+###Notification
+  Possible values:
+* STATE_NONE
+* STATE_STOPPED
+* STATE_PLAYING
+* STATE_PAUSED
+* STATE_BUFFERING
+* STATE_ERROR
+* STATE_CONNECTING (?)
+* OTHER
 
 </docgen-api>
