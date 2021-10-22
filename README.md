@@ -217,6 +217,9 @@ NativeAudio.setVolume({
  */
 NativeAudio.getVolume({
   assetId: 'fire',
+})
+.then(result => {
+  result.volume
 });
 
 /**
