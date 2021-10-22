@@ -12,6 +12,7 @@ import android.os.ResultReceiver;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
 import com.getcapacitor.JSObject;
@@ -29,7 +30,7 @@ public class NativeAudio extends Plugin {
     public static final String TAG = "NativeAudio";
 
     private MediaBrowserCompat mediaBrowser;
-    private String currentUrl;
+    private Track currentTrack;
 
     private final MediaBrowserCompat.ConnectionCallback connectionCallbacks = new MediaBrowserCompat.ConnectionCallback() {
 
@@ -38,10 +39,22 @@ public class NativeAudio extends Plugin {
             Log.d(TAG, "onConnected ");
             super.onConnected();
             try {
-                MediaControllerCompat.setMediaController(getActivity(), new MediaControllerCompat(getActivity(), mediaBrowser.getSessionToken()));
-
+                MediaControllerCompat mediaController = new MediaControllerCompat(getActivity(), mediaBrowser.getSessionToken());
+                MediaControllerCompat.setMediaController(getActivity(), mediaController);
+                mediaController.registerCallback(new MediaControllerCompat.Callback() {
+                    @Override
+                    public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                        super.onPlaybackStateChanged(state);
+                        String status = Helper.mapPlayerStatus(state);
+                        Log.d(TAG, "onPlaybackStateChanged " + state.getState() + "(" + status + ") - " + state.getPosition());
+                        JSObject json = new JSObject();
+                        json.put("status", status);
+                        json.put("position", state.getPosition() / 1000);
+                        notifyListeners("playbackStateChanged", json);
+                    }
+                });
             } catch (RemoteException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Error on media controller", e);
             }
 
         }
@@ -70,13 +83,19 @@ public class NativeAudio extends Plugin {
     @PluginMethod
     public void preload(final PluginCall call) {
         try {
+            Log.d(TAG, "preload " + call);
+            currentTrack = new Track();
             if (Boolean.TRUE == call.getBoolean(IS_URL, false)) {
-                currentUrl = call.getString(ASSET_PATH);
+                currentTrack.url = call.getString(ASSET_PATH);
             } else {
-                currentUrl = "file://android_asset/" + call.getString(ASSET_PATH);
+                currentTrack.url = "file://android_asset/" + call.getString(ASSET_PATH);
             }
+            currentTrack.trackName = call.getString(TRACK, null);
+            currentTrack.artistName = call.getString(ARTIST, null);
+            currentTrack.coverArtUrl = call.getString(COVER, null);
+            currentTrack.albumName = call.getString(ALBUM, null);
             call.resolve();
-        }catch (Exception e) {
+        } catch (Exception e) {
             call.reject(e.getMessage());
         }
     }
@@ -84,8 +103,18 @@ public class NativeAudio extends Plugin {
     @PluginMethod
     public void play(final PluginCall call) {
         try {
+            long desiredTime = call.getFloat(CURRENT_TIME, 0f).longValue();
             MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
-            mc.getTransportControls().playFromUri(Uri.parse(currentUrl), null);
+            Bundle metadata = new Bundle();
+            metadata.putString(TRACK, currentTrack.trackName);
+            metadata.putString(ARTIST, currentTrack.artistName);
+            metadata.putString(COVER, currentTrack.coverArtUrl);
+            metadata.putString(ALBUM, currentTrack.albumName);
+            mc.getTransportControls().playFromUri(Uri.parse(currentTrack.url), metadata);
+            // start from time
+            if (desiredTime != 0L) {
+                mc.getTransportControls().seekTo(desiredTime * 1000);
+            }
             call.resolve();
         }catch (Exception e) {
             call.reject(e.getMessage());
@@ -100,7 +129,7 @@ public class NativeAudio extends Plugin {
                 @Override
                 protected void onReceiveResult(int resultCode, Bundle resultData) {
                     super.onReceiveResult(resultCode, resultData);
-                    call.resolve(new JSObject().put(CURRENT_TIME, resultData.getInt(NativeAudioService.EXTRA_CURRENT_POSITION)));
+                    call.resolve(new JSObject().put(CURRENT_TIME, resultData.getInt(NativeAudioService.EXTRA_CURRENT_POSITION) / 1000));
                 }
             });
         } catch (Exception ex) {
@@ -113,7 +142,7 @@ public class NativeAudio extends Plugin {
         try {
             long desiredTime = call.getFloat(CURRENT_TIME, 0f).longValue();
             MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
-            mc.getTransportControls().seekTo(desiredTime);
+            mc.getTransportControls().seekTo(desiredTime * 1000);
             call.resolve();
         } catch (Exception ex) {
             call.reject(ex.getMessage());
@@ -125,11 +154,12 @@ public class NativeAudio extends Plugin {
         try {
             MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
             if (mc.getMetadata() != null) {
-                call.resolve(new JSObject().put(DURATION, mc.getMetadata().getLong(MediaMetadataCompat.METADATA_KEY_DURATION)));
+                call.resolve(new JSObject().put(DURATION, mc.getMetadata().getLong(MediaMetadataCompat.METADATA_KEY_DURATION) / 1000));
             } else {
                 call.resolve(new JSObject().put(DURATION, -1));
             }
         } catch (Exception ex) {
+
             call.reject(ex.getMessage());
         }
     }
@@ -186,8 +216,10 @@ public class NativeAudio extends Plugin {
         try {
             MediaControllerCompat mc = MediaControllerCompat.getMediaController(getActivity());
             float volume = call.getFloat(VOLUME, 0.5f);
+            if (volume > 1.0f) volume = 1.0f;
             int volumeAbs = (int) (mc.getPlaybackInfo().getMaxVolume() * volume);
             mc.setVolumeTo(volumeAbs, 0);
+            call.resolve();
         } catch (Exception ex) {
             call.reject(ex.getMessage());
         }

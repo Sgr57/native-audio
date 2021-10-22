@@ -23,7 +23,11 @@ export class NativeAudioWeb extends WebPlugin implements NativeAudio {
     console.log(options)
     throw new Error('Method not implemented.');
   }
-  getCurrentTime (options: { assetId: string; time: number }): Promise<{ currentTime: number; }> {
+  getCurrentTime (options: { assetId: string }): Promise<{ time: number; }> {
+    console.log(options)
+    throw new Error('Method not implemented.');
+  }
+  setCurrentTime (options: { assetId: string; time: number }): Promise<void> {
     console.log(options)
     throw new Error('Method not implemented.');
   }
@@ -55,7 +59,11 @@ export class NativeAudioWeb extends WebPlugin implements NativeAudio {
     console.log(options);
     throw new Error("Method not implemented.");
   }
-  setVolume(options: { assetId: string }): Promise<void> {
+  getVolume(options: { assetId: string }): Promise<{ volume: number }> {
+    console.log(options);
+    throw new Error("Method not implemented.");
+  }
+  setVolume(options: { assetId: string; volume: number }): Promise<void> {
     console.log(options);
     throw new Error("Method not implemented.");
   }
