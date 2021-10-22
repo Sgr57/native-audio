@@ -252,7 +252,7 @@ NativeAudio.getCurrentTime({
  */
 NativeAudio.setCurrentTime({
   assetId: 'fire',
-  currentTime: 123455,
+  time: 123455,
 });
 
 // Listen for events and pass them to your handler function
@@ -454,12 +454,12 @@ getCurrentTime(options: { assetId: string; }) => Promise<{ currentTime: number; 
 ### setCurrentTime(...)
 
 ```typescript
-setCurrentTime(options: { currentTime: number; }) => Promise<{ currentTime: number; }>
+setCurrentTime(options: { time: number; }) => Promise<void>
 ```
 
 | Param         | Type                              |
 | ------------- | --------------------------------- |
-| **`options`** | <code>{ currentTime: number, value in seconds; }</code> |
+| **`options`** | <code>{ time: number, value in seconds; }</code> |
 
 **Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
 
