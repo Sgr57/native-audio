@@ -241,13 +241,13 @@ NativeAudio.getCurrentTime({
   assetId: 'fire'
 });
 .then(result => {
-  console.log(result.currentTime);
+  console.log(result.time);
 })
 
 /**
  * This method will set the new current time for a audio file.
  * @param assetId - identifier of the asset
- *        currentTime - numerical value in seconds
+ *        time - numerical value in seconds
  * @returns void
  */
 NativeAudio.setCurrentTime({
@@ -257,7 +257,7 @@ NativeAudio.setCurrentTime({
 
 // Listen for events and pass them to your handler function
 
-NativeAudio.addListener('controlsNotification', (info: any) => {
+NativeAudio.addListener('playbackStateChanged', (info: {status: string, position: number}) => {
     console.log('controlsNotification was fired');
     console.log(info);
     handleControlsEvent(info);
@@ -268,25 +268,25 @@ function handleControlsEvent(action) {
 	const message = action.message;
 	console.log("message: " + message)
 	switch(message) {
-		case 'STATE_NONE':
+		case 'NONE':
 			// none
 			break;
-		case 'STATE_STOPPED':
+		case 'STOPPED':
 			// stop
 			break;
-		case 'STATE_PLAYING':
+		case 'PLAYING':
 			// playing
 			break;
-		case 'STATE_PAUSED':
+		case 'PAUSED':
 			// paused
 			break;
-		case 'STATE_BUFFERING':
+		case 'BUFFERING':
 			// buffering
 			break;
-		case 'STATE_ERROR':
+		case 'ERROR':
 			// error
 			break;
-    		case 'STATE_CONNECTING':
+    		case 'CONNECTING':
 			// connecting
 			break;
     		case 'OTHER':
@@ -294,10 +294,6 @@ function handleControlsEvent(action) {
 			break;
 	}
 }
-
-NativeAudio.addListener('currentTime', (currentTime: number) => {
-    console.log('currentTime:', currentTime);
-});
 
 ```
 
@@ -440,14 +436,14 @@ getVolume(options: { assetId: string; }) => Promise<{volume: number;}>
 ### getCurrentTime(...)
 
 ```typescript
-getCurrentTime(options: { assetId: string; }) => Promise<{ currentTime: number; }>
+getCurrentTime(options: { assetId: string; }) => Promise<{ time: number; }>
 ```
 
 | Param         | Type                              |
 | ------------- | --------------------------------- |
 | **`options`** | <code>{ assetId: string; }</code> |
 
-**Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
+**Returns:** <code>Promise&lt;{ time: number; }&gt;</code>
 
 --------------------
   
@@ -461,7 +457,7 @@ setCurrentTime(options: { time: number; }) => Promise<void>
 | ------------- | --------------------------------- |
 | **`options`** | <code>{ time: number, value in seconds; }</code> |
 
-**Returns:** <code>Promise&lt;{ currentTime: number; }&gt;</code>
+**Returns:** <code>Promise&lt;void&gt;</code>
 
 --------------------
 
